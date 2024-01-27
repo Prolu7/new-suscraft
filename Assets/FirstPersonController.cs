@@ -5,9 +5,10 @@ public class FirstPersonController : MonoBehaviour
     //references
     Transform camTf;
     Camera playerCam;
+    GameManager gM;
 
     [Header("Camera")]
-    [SerializeField] float sensitivity = 1f;
+    public float sensitivity = 1f;
     float yRot = 0f;
     float mouseX;
     float mouseY;
@@ -31,6 +32,7 @@ public class FirstPersonController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        gM = FindObjectOfType<GameManager>();
         Cursor.lockState = CursorLockMode.None;
         playerCam = GetComponentInChildren<Camera>();
         camTf = playerCam.transform;
@@ -41,12 +43,23 @@ public class FirstPersonController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //inputting
-        mouseX = Input.GetAxisRaw("Mouse X") * sensitivity;
-        mouseY = Input.GetAxisRaw("Mouse Y") * sensitivity;
-
-        horizontal = Input.GetAxisRaw("Horizontal");
-        vertical = Input.GetAxisRaw("Vertical");
+        // used for Input & locking
+        if (!gM.InputLock)
+        {
+            mouseX = Input.GetAxisRaw("Mouse X") * sensitivity;
+            mouseY = Input.GetAxisRaw("Mouse Y") * sensitivity;
+            
+            horizontal = Input.GetAxisRaw("Horizontal");
+            vertical = Input.GetAxisRaw("Vertical");
+        }
+        else
+        {
+            mouseX = 0f;
+            mouseY = 0f;
+            
+            horizontal = 0f;
+            vertical = 0f;
+        }
 
         //cameraring
         transform.Rotate(Vector3.up * mouseX);
@@ -56,7 +69,7 @@ public class FirstPersonController : MonoBehaviour
 
         //jumparing
         jumpTimer += Time.deltaTime;
-        if (Input.GetKey(KeyCode.Space) && Grounded && jumpCooldown < jumpTimer)
+        if (!gM.InputLock && Input.GetKey(KeyCode.Space) && Grounded && jumpCooldown < jumpTimer)
         { 
             acceleration += jumpHeight;
             jumpTimer = 0f;

@@ -5,15 +5,17 @@ public class InventoryUI : MonoBehaviour
 {
     bool inventoryIsOpen = false;
     [SerializeField] GameObject inventoryUI;
-    GameManager Gm;
+    GameManager gM;
     InventorySystem inventorySystem;
     public Button[] Slots = new Button[9*4];
     public Image[] HotbarSlots = new Image[9];
+    public Image Selector;
+    
 
     private void Awake()
     {
-        Gm = FindObjectOfType<GameManager>();
-        Gm.PlayerSpawnEvent += OnPlayerSpawn;
+        gM = FindObjectOfType<GameManager>();
+        gM.PlayerSpawnEvent += OnPlayerSpawn;
     }
 
     private void OnPlayerSpawn(object sender, PlayerSpawnEventArgs e)
@@ -26,10 +28,31 @@ public class InventoryUI : MonoBehaviour
     {
         for (int i = 0; i < e.Inventory.Length; i++)
         {
+            ColorBlock cb = Slots[i].colors;
+            
+            if (!e.Inventory[i])
+            {
+                cb.normalColor = new Vector4(1f, 1f, 1f, 0.01f);
+                
+                if (i >= 9 * 3)
+                    HotbarSlots[i % HotbarSlots.Length].color = Color.clear;
+
+                cb.selectedColor = cb.normalColor;
+                Slots[i].colors = cb;
+                continue;
+            }
+
             Slots[i].image.sprite = e.Inventory[i].Icon;
-            if(i >= 9*3)
+            cb.normalColor = Vector4.one;
+            if(i >= 9 * 3)
+            {
                 HotbarSlots[i%HotbarSlots.Length].sprite = e.Inventory[i].Icon;
+                HotbarSlots[i % HotbarSlots.Length].color = Color.white;
+            }
+            cb.selectedColor = cb.normalColor;
+            Slots[i].colors = cb;
         }
+        Selector.rectTransform.position = HotbarSlots[e.Selection].rectTransform.position;
     }
     private void Update()
     {
@@ -37,15 +60,12 @@ public class InventoryUI : MonoBehaviour
         {
             inventoryIsOpen = !inventoryIsOpen;
             OpenInventory(inventoryIsOpen);
-            inventoryUI.SetActive(inventoryIsOpen);
         }
     }
     void OpenInventory(bool open)
     {
-        if (open)
-            Cursor.lockState = CursorLockMode.None;
-        else
-            Cursor.lockState = CursorLockMode.Locked;
+        gM.LockInput(open);
+        inventoryUI.SetActive(open);
     }
 
 }
