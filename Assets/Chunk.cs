@@ -1,12 +1,7 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using Unity.VisualScripting;
-using UnityEngine;
-using UnityEngine.Rendering;
-using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider))]
 public class Chunk : MonoBehaviour
@@ -33,6 +28,11 @@ public class Chunk : MonoBehaviour
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
     }
+    private void Update()
+    {
+        hasSpawnedInCurrentFrame = false;
+    }
+    static bool hasSpawnedInCurrentFrame = false;
     public IEnumerator GenerateChunk(int seed)
     {
         noiseLite.SetSeed(seed);
@@ -48,7 +48,11 @@ public class Chunk : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
         }
         //yield return t.GetAwaiter();
-        yield return new WaitForSeconds(UnityEngine.Random.Range(0f, .3f));
+        while (hasSpawnedInCurrentFrame)
+        {
+            yield return null;
+        }
+        hasSpawnedInCurrentFrame = true;
         ImportMesh(vertices.ToArray(), tris.ToArray(), normals.ToArray(), uvs.ToArray());
     }
     void GenerateData(Vector3 position)
@@ -164,10 +168,10 @@ public class Chunk : MonoBehaviour
     private Vector3[] GenerateFaceVertices(Vector3 direction)
     {
         Vector3[] faceVertices = new Vector3[4];
-        Quaternion rotator = Quaternion.FromToRotation(Vector3.up, direction);
+        Quaternion rotator = Quaternion.FromToRotation(Vector3.forward, direction);
         
-        faceVertices[0] = rotator * (new Vector3(-.5f, .5f, -.5f));
-        faceVertices[1] = rotator * (new Vector3(.5f, .5f, -.5f));
+        faceVertices[0] = rotator * (new Vector3(-.5f, -.5f, .5f));
+        faceVertices[1] = rotator * (new Vector3(.5f, -.5f, .5f));
         faceVertices[2] = rotator * (new Vector3(.5f, .5f, .5f));
         faceVertices[3] = rotator * (new Vector3(-.5f, .5f, .5f));
         uvs.Add(new Vector2(0, 0));
@@ -185,11 +189,11 @@ public class Chunk : MonoBehaviour
             vertIndex[i] = AddVertexAndNormal(faceVertices[i] + offset, direction);
         }
         tris.Add(vertIndex[2]);
-        tris.Add(vertIndex[1]);
         tris.Add(vertIndex[0]);
+        tris.Add(vertIndex[1]);
 
         tris.Add(vertIndex[0]);
-        tris.Add(vertIndex[3]);
         tris.Add(vertIndex[2]);    
+        tris.Add(vertIndex[3]);
     }
 }

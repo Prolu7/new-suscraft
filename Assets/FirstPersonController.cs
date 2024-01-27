@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class FirstPersonController : MonoBehaviour
@@ -19,7 +16,6 @@ public class FirstPersonController : MonoBehaviour
     [SerializeField] CharacterController controller;
     [SerializeField] float gravity = -9.81f;
     public float acceleration;
-    [SerializeField] float groundDistance = .2f;
     public bool Grounded;
     float horizontal;
     float vertical;
@@ -35,7 +31,7 @@ public class FirstPersonController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.lockState = CursorLockMode.None;
         playerCam = GetComponentInChildren<Camera>();
         camTf = playerCam.transform;
         if(controller == null)
@@ -70,16 +66,17 @@ public class FirstPersonController : MonoBehaviour
         float maxAccel = 78.4f;
         acceleration = Mathf.Clamp(acceleration, -maxAccel, maxAccel);
         float sphereCastRadius = controller.radius - .1f;
-        float castLength = groundDistance + sphereCastRadius;
-        Vector3 rayOrigin = transform.position + transform.up * sphereCastRadius * 2f;
+        float castLength = sphereCastRadius / 2;
+        Vector3 rayOrigin = transform.position - transform.up + transform.up * sphereCastRadius;
 
         //groundating
 
         //good ground check
         //Grounded = Physics.Raycast(rayOrigin, transform.up * -1f, groundDistance + .2f);
 
-        Grounded = Physics.SphereCast(rayOrigin, sphereCastRadius, Vector3.down, out RaycastHit hitInfo, castLength);
-        
+        Grounded = Physics.SphereCast(rayOrigin, sphereCastRadius, Vector3.down, out RaycastHit hitInfo, castLength) && colliding;
+        colliding = false;
+
         if (!Grounded)
             acceleration += gravity * Time.deltaTime;
         else if (acceleration < 0)
@@ -95,7 +92,15 @@ public class FirstPersonController : MonoBehaviour
             speed = walkSpeed;
 
         //controllaring
-        move = horizontal * transform.right + vertical * transform.forward;
-        controller.Move(move.normalized * Time.deltaTime * speed);
+        Vector3 inputVector = Vector3.ClampMagnitude(horizontal * transform.right + vertical * transform.forward, 1f);
+
+        move = speed * Time.deltaTime * inputVector;
+
+        controller.Move(move);
+    }
+    bool colliding = false;
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        colliding = true;
     }
 }
